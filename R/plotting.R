@@ -93,22 +93,32 @@ posteriorCurvePlot <- function(X, fit, posterior_mean = TRUE,
   pst <- rstan::extract(fit, pars = "t", permute = FALSE)
   lambda <- rstan::extract(fit, pars = "lambda", permute = FALSE)
   sigma <- rstan::extract(fit, pars = "sigma", permute = FALSE)
-  for(i in 1:Ns) {
+  plots <- lapply(seq_len(Ns), function(i) {
     l <- lambda[,,(2*i - 1):(2*i),drop=FALSE]
     s <- sigma[,,(2*i - 1):(2*i),drop=FALSE]
-    plt <- makeEnvelopePlot(pst, l, s, X[[i]], chains, posterior_mean, nsamples, nnt, point_colour,
-                            curve_colour, point_alpha, curve_alpha, use_cowplot, standardize_ranges)
-    plots[[i]] <- plt
-  }
+    makeEnvelopePlot(pst, l, s, X[[i]], chains, posterior_mean, nsamples, nnt, point_colour,
+                     curve_colour, point_alpha, curve_alpha, use_cowplot, standardize_ranges)
+  })
   gplt <- cowplot::plot_grid(plotlist = plots, labels = names(X), nrow = grid_nrow, ncol = grid_ncol)
   return( gplt )
 }
 
+#' Make envelope plot
+#'
+#' @param pst Pseudotime param
+#' @param l Lambda param
+#' @param s Sigma param
+#' @param x Dimred param
+#' @param chains Number of chains
+#' @param ncurves The number of new points at which to calculate the posterior mean curves.
+#' @inheritParams posteriorCurvePlot
+#'
 #' @import ggplot2
 #' @importFrom cowplot theme_cowplot
 #' @importFrom MCMCglmm posterior.mode
 #' @importFrom coda mcmc
 #' @importFrom dplyr arrange filter
+#' @export
 makeEnvelopePlot <- function(pst, l, s, x, chains, posterior_mean, ncurves, nnt,
                              point_colour = "darkred", curve_colour = "black",
                              point_alpha = 1, curve_alpha = 0.5,
